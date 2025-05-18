@@ -80,8 +80,11 @@ class PluginChainUI : public juce::Component {
 
         showPluginButton.setButtonText("Show Plugin");
         showPluginButton.onClick = [this]() {
+            if (selectedIndex < 0 || selectedIndex >= pluginChain.size()) return;
             auto& selectedEntry = pluginChain[selectedIndex];
-            this->showPluginContent(*selectedEntry);
+            if (selectedEntry) {
+                this->showPluginContent(*selectedEntry);
+            }
         };
         addAndMakeVisible(showPluginButton);
 
