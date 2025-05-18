@@ -1,6 +1,6 @@
 # MicAudioRack
 
-**MicAudioRack** is an open-source audio routing application written in modern C++ using the [JUCE](https://juce.com/) framework. It allows users to route microphone input through a customizable chain of audio effects, including both VST3 plugins and built-in processors, and output the processed audio to any available device.
+**MicAudioRack** is an open-source audio routing application written in C++ using the [JUCE](https://juce.com/) framework. It allows users to route microphone input through a customizable chain of audio effects, including both VST3 plugins and built-in processors, and output the processed audio to any available device.
 
 ## Getting Started
 
@@ -9,6 +9,9 @@
 - JUCE 7.x (you can clone it from [https://github.com/juce-framework/JUCE](https://github.com/juce-framework/JUCE))
 - CMake >= 3.15
 - C++17-compatible compiler (MSVC, Clang, or GCC)
+
+> Note: If you want to use this program to apply effects to your voice in real-time communication apps (such as Discord, Teams, Zoom, etc.), you will need to install a [virtual audio cable](https://vb-audio.com/Cable). 
+> It allows you to route the processed audio from this program into other applications as if it were a microphone input.
 
 ### Build Instructions
 
