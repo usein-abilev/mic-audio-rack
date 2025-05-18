@@ -6,9 +6,8 @@
 class PluginEditorWindow : public juce::DocumentWindow {
    public:
     PluginEditorWindow(juce::AudioProcessorEditor* pluginEditor)
-        : juce::DocumentWindow("Plugin Editor",
-                               juce::Colours::darkgrey,
-                               juce::DocumentWindow::allButtons) {
+        : juce::DocumentWindow(
+              "Plugin Editor", juce::Colours::darkgrey, juce::DocumentWindow::allButtons) {
         setUsingNativeTitleBar(true);
         setResizable(true, false);
         setSize(800, 600);
@@ -28,7 +27,5 @@ class PluginEditorWindow : public juce::DocumentWindow {
         setVisible(true);
     }
 
-    void closeButtonPressed() override {
-        setVisible(false);
-    }
+    void closeButtonPressed() override { setVisible(false); }
 };

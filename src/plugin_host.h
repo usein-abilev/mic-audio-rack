@@ -27,6 +27,7 @@ class PluginHost {
     bool addPlugin(const juce::PluginDescription& desc, int position = -1);
     bool addPlugin(std::unique_ptr<juce::AudioProcessor> processor, int position = -1);
     bool removePlugin(int index);
+    bool movePlugin(int fromIndex, int toIndex);
     bool bypassPlugin(int index, bool bypass);
 
     juce::KnownPluginList& getLoadedPluginList() { return loadedPluginList; }

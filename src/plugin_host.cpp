@@ -98,6 +98,19 @@ bool PluginHost::removePlugin(int index) {
     return true;
 }
 
+bool PluginHost::movePlugin(int fromIndex, int toIndex) {
+    if (fromIndex < 0 || fromIndex >= pluginEntries.size() || toIndex < 0 ||
+        toIndex >= pluginEntries.size())
+        return false;
+
+    auto entry = std::move(pluginEntries[fromIndex]);
+    pluginEntries.erase(pluginEntries.begin() + fromIndex);
+    pluginEntries.insert(pluginEntries.begin() + toIndex, std::move(entry));
+    updateGraph();
+
+    return true;
+}
+
 bool PluginHost::bypassPlugin(int index, bool bypass) {
     if (index < 0 || index >= pluginEntries.size()) {
         return false;

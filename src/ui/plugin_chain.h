@@ -2,6 +2,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <math.h>
 
 #include "plugin_host.h"
 
@@ -21,7 +22,7 @@ class PluginListItem : public juce::Component {
         nameLabel.setInterceptsMouseClicks(false, true);
         addAndMakeVisible(nameLabel);
 
-        toggleButton.setButtonText("bypass");
+        toggleButton.setButtonText(bypass ? "enable" : "bypass");
         toggleButton.onClick = [this]() {
             bypass = !bypass;
             toggleButton.setButtonText(bypass ? "enable" : "bypass");
@@ -77,6 +78,13 @@ class PluginChainUI : public juce::Component {
         };
         addAndMakeVisible(addButton);
 
+        showPluginButton.setButtonText("Show Plugin");
+        showPluginButton.onClick = [this]() {
+            auto& selectedEntry = pluginChain[selectedIndex];
+            this->showPluginContent(*selectedEntry);
+        };
+        addAndMakeVisible(showPluginButton);
+
         removeButton.setButtonText("Delete Plugin");
         removeButton.onClick = [this]() {
             pluginHost.removePlugin(selectedIndex);
@@ -91,11 +99,22 @@ class PluginChainUI : public juce::Component {
 
         moveUpButton.setButtonText("Move Up");
         addAndMakeVisible(moveUpButton);
-        // TODO: implement move up button
+        moveUpButton.onClick = [this]() {
+            int newIndex = std::max(0.0, static_cast<double>(selectedIndex - 1));
+            pluginHost.movePlugin(selectedIndex, newIndex);
+            selectedIndex = newIndex;
+            refreshList();
+        };
 
         moveDownButton.setButtonText("Move Down");
         addAndMakeVisible(moveDownButton);
-        // TODO: implement move down button
+        moveDownButton.onClick = [this]() {
+            int newIndex = std::min(static_cast<double>(pluginHost.getPluginEntries().size() - 1),
+                static_cast<double>(selectedIndex + 1));
+            pluginHost.movePlugin(selectedIndex, newIndex);
+            selectedIndex = newIndex;
+            refreshList();
+        };
 
         refreshList();
     }
@@ -110,12 +129,8 @@ class PluginChainUI : public juce::Component {
                 *entry,
                 [this, i]() {
                     if (selectedIndex == static_cast<int>(i)) return;
-                    std::cout << "PluginChainUI: Plugin selected: " << pluginChain[i]->name
-                              << std::endl;
                     selectedIndex = static_cast<int>(i);
                     this->refreshList();
-                    auto& selectedEntry = pluginChain[selectedIndex];
-                    this->showPluginContent(*selectedEntry);
                 },
                 [this, i](bool state) {
                     pluginHost.bypassPlugin(i, state);
@@ -132,20 +147,15 @@ class PluginChainUI : public juce::Component {
         resized();
     }
 
-    void paint(juce::Graphics& g) override {
-        g.fillAll(static_cast<juce::Colour>(0xFF2a2a2a));
-        // g.setColour(juce::Colours::black);
-        // g.drawRect(getLocalBounds(), 1);
-        // g.setColour(juce::Colours::white);
-        // g.drawText("Plugin Chain", 10, 10, getWidth() - 20, 20, juce::Justification::topLeft);
-    }
+    void paint(juce::Graphics& g) override { g.fillAll(static_cast<juce::Colour>(0xFF2a2a2a)); }
 
     void resized() override {
         auto area = getLocalBounds();
         auto controlArea = area.removeFromBottom(40).reduced(4);
-        int btnWidth = controlArea.getWidth() / 4;
+        int btnWidth = controlArea.getWidth() / 5;
 
         addButton.setBounds(controlArea.removeFromLeft(btnWidth));
+        showPluginButton.setBounds(controlArea.removeFromLeft(btnWidth));
         removeButton.setBounds(controlArea.removeFromLeft(btnWidth));
         moveUpButton.setBounds(controlArea.removeFromLeft(btnWidth));
         moveDownButton.setBounds(controlArea);
@@ -158,9 +168,6 @@ class PluginChainUI : public juce::Component {
         viewport.setBounds(viewportArea);
     }
 
-    // std::function<void()> onAddPlugin;
-    // std::function<void(int index)> onPluginSelected;
-
    private:
     static constexpr int itemHeight = 34;
     static constexpr int itemWidth = 300;
@@ -170,15 +177,13 @@ class PluginChainUI : public juce::Component {
 
     int selectedIndex = -1;
 
-    // std::vector<std::unique_ptr<PluginEntry>>& pluginChain;
-
     juce::Viewport viewport;
     PluginHost& pluginHost;
     std::vector<std::unique_ptr<PluginEntry>>& pluginChain;
     std::map<int, juce::PluginDescription> vstPluginMap;
     std::unique_ptr<juce::Component> pluginListContent;
     std::unique_ptr<PluginEditorWindow> pluginEditorWindow;
-    juce::TextButton addButton, removeButton, moveUpButton, moveDownButton;
+    juce::TextButton addButton, showPluginButton, removeButton, moveUpButton, moveDownButton;
 
     void showPluginMenu() {
         vstPluginMap.clear();
@@ -193,7 +198,6 @@ class PluginChainUI : public juce::Component {
             vstPluginMap[i + 1] = pluginsList[i];
         }
 
-        std::cout << "showPluginMenu(): vst plugins count: " << pluginsList.size() << std::endl;
         menu.addSubMenu("VST Plugins", vstPluginsMenu);
 
         menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(addButton),
@@ -217,12 +221,18 @@ class PluginChainUI : public juce::Component {
             return;
         }
 
+        if (pluginEditorWindow) {
+            // If the current plugin is reopened, its window must be destroyed and freed
+            // Probably not the best way to do this, but it works so...
+            pluginEditorWindow = nullptr;
+        }
+
         auto editor = entry.node->getProcessor()->createEditor();
         if (editor) {
             pluginEditorWindow = std::make_unique<PluginEditorWindow>(editor);
-            pluginEditorWindow->setSize(500, 300);
+            pluginEditorWindow->setSize(600, 300);
             pluginEditorWindow->setOpaque(true);
-            // addToDesktop(juce::ComponentPeer::windowIsTemporary, pluginEditorWindow.get());
+            pluginEditorWindow->setVisible(true);
         } else {
             std::cout << "Plugin doesn't have an editor" << std::endl;
         }
